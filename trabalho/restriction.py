@@ -3,6 +3,7 @@ from variable import Variable
 
 
 class Restriction:
+    vars: list[Variable]
     func: Callable[..., bool]
 
     def __init__(self, vars: list[Variable], func: Callable[..., bool]) -> None:
