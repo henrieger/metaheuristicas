@@ -1,10 +1,12 @@
 from copy import deepcopy
 from random import random, randint, randrange
-from typing import Callable
+from typing import Callable, Generator
+from number import Number
 from variable import Variable
 from restriction import Restriction
 from solvers.test import TestSolver
 from solvers.genetic import Chromosome, GeneticAlgorithm
+from solvers.vns import VariableNeighborhoodSearch
 
 
 x: list[Variable] = [Variable(f"x{i}", min=0, max=1) for i in range(7)]
@@ -86,4 +88,78 @@ print(
     "GeneticAlgorithm:",
     [x_i.value() for x_i in x],
     objective(x),
+)
+
+
+# Variable Neighborhood Search
+
+
+def random_solution(variables: list[Variable]) -> list[Number]:
+    return [randint(0, 1) for _ in variables]
+
+
+# def neighborhood1(solution: list[Number]) -> Generator[list[Number], None, None]:
+#     tail = solution[3:]
+#     yield [0, 0, 0] + tail
+#     yield [0, 0, 1] + tail
+#     yield [0, 1, 0] + tail
+#     yield [0, 1, 1] + tail
+#     yield [1, 0, 0] + tail
+#     yield [1, 1, 0] + tail
+#     yield [1, 0, 1] + tail
+#     yield [1, 0, 1] + tail
+#     yield [1, 1, 1] + tail
+#
+#
+# def neighborhood2(solution: list[Number]) -> Generator[list[Number], None, None]:
+#     head = solution[0:3]
+#     tail = solution[5:]
+#
+#     yield head + [0, 0] + tail
+#     yield head + [0, 1] + tail
+#     yield head + [1, 0] + tail
+#     yield head + [1, 1] + tail
+#
+#
+# def neighborhood3(solution: list[Number]) -> Generator[list[Number], None, None]:
+#     head = solution[0:5]
+#
+#     yield head + [0, 0]
+#     yield head + [0, 1]
+#     yield head + [1, 0]
+#     yield head + [1, 1]
+
+
+def neighborhood1(solution: list[Number]) -> Generator[list[Number], None, None]:
+    for i, bit in enumerate(solution):
+        head = solution[:i]
+        tail = solution[i + 1:]
+        yield head + [1 - bit] + tail
+
+
+def neighborhood2(solution: list[Number]) -> Generator[list[Number], None, None]:
+    for i, bit1 in enumerate(solution):
+        head = solution[:i]
+        body = solution[i + 1:]
+        for j, bit2 in enumerate(body, i + 1):
+            middle = solution[i + 1: j]
+            tail = solution[j + 1:]
+            yield head + [1 - bit1] + middle + [1 - bit2] + tail
+
+
+vns_solver = VariableNeighborhoodSearch(
+    x,
+    [r],
+    objective,
+    maximize=True,
+    initial_solution_func=random_solution,
+    neighborhoods=[neighborhood1, neighborhood2],
+    local_searches=3,
+)
+vns_solver.solve()
+print(
+    "VariableNeighborhoodSearch:",
+    [x_i.value() for x_i in x],
+    objective(x),
+    vns_solver.bests,
 )
